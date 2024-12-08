@@ -66,6 +66,21 @@ for root, dirs, files in os.walk(source):
 
         os.makedirs(os.path.dirname(dest_file), exist_ok=True)
         shutil.copy2(src_file,dest_file)
+    
+    for root, dirs, files in os.walk(destination, topdown=False):
+        for file in files:
+            replica_file = os.path.join(root, file)
+            rel_path = os.path.relpath(replica_file, destination)
+            source_file = os.path.join(source, rel_path)
+            if not os.path.exists(source_file):
+                os.remove(replica_file)
+
+        for dir in dirs:
+            replica_dir = os.path.join(root, dir)
+            rel_path = os.path.relpath(replica_dir, destination)
+            source_dir = os.path.join(source, rel_path)
+            if not os.path.exists(source_dir):
+                shutil.rmtree(replica_dir)
 print("After copying file source:") 
 print(os.listdir(source))
 print("After copying file destin:") 
