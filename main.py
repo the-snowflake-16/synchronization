@@ -1,78 +1,30 @@
 import argparse
 import os
+import shutil
+import time
 
+def synchronisation(source, destination):
+    for root, dirs, files in os.walk(source):
+        for dir in dirs:
+            src_dir = os.path.join(root, dir)
+            rel_path = os.path.relpath(src_dir, source)
+            dest_dir = os.path.join(destination, rel_path)
+            os.makedirs(dest_dir, exist_ok=True)
 
-# def synchronization(source_folder, replica_folder, interval):
+        for file in files:
+            src_file = os.path.join(root, file)
+            rel_path = os.path.relpath(src_file, source)
+            dest_file = os.path.join(destination, rel_path)
+            os.makedirs(os.path.dirname(dest_file), exist_ok=True) 
+            shutil.copy2(src_file, dest_file)
 
-# Python program to explain shutil.copy() method 
-
-# importing shutil module 
-# import shutil 
-
-# source = "/home/fortytwo/Desktop/source/main.py"
-# destination ="/home/fortytwo/Desktop/replica/main2.py"
-
-# # Copy the content of 
-# # source to destination 
-# dest = shutil.copy(source, destination) 
-
-# # Print path of newly 
-# # created file 
-# print("Destination path:", dest) 
-
-# Python program to explain shutil.copy2() method 
-	
-# importing os module 
-import os 
-
-# importing shutil module 
-import shutil 
-
-# path 
-path = '/home/fortytwo/Desktop/source/'
-
-# List files and directories 
-# in '/home/User/Documents' 
-
-
-# Source path 
-source = "/home/fortytwo/Desktop/source/"
-
-# Print the metadeta 
-# of source file 
-# metadata = os.stat(source) 
-# print("Metadata:", metadata, "\n") 
-
-# Destination path 
-destination = "/home/fortytwo/Desktop/replica/"
-
-print("Before copying file:") 
-print(os.listdir(destination)) 
-for root, dirs, files in os.walk(source):
-    # print(f"root {root}")
-    # print(f"dirs {dirs}")
-    # print(f"files {files}")
-    for dir in dirs:
-        src_dir = os.path.join(root, dir)
-        rel_path = os.path.relpath(src_dir, source)
-        dest_dir = os.path.join(destination, rel_path)
-        os.makedirs(dest_dir, exist_ok = True)
-    for file in files:
-        src_file = os.path.join(root, file)
-        # print(f"print src {src_file}")
-        rel_path = os.path.relpath(src_file, source)
-        # print(rel_path)
-        dest_file = os.path.join(destination, rel_path)
-
-        os.makedirs(os.path.dirname(dest_file), exist_ok=True)
-        shutil.copy2(src_file,dest_file)
-    
     for root, dirs, files in os.walk(destination, topdown=False):
         for file in files:
             replica_file = os.path.join(root, file)
             rel_path = os.path.relpath(replica_file, destination)
             source_file = os.path.join(source, rel_path)
             if not os.path.exists(source_file):
+                print(f"Removing file: {replica_file}")
                 os.remove(replica_file)
 
         for dir in dirs:
@@ -80,40 +32,41 @@ for root, dirs, files in os.walk(source):
             rel_path = os.path.relpath(replica_dir, destination)
             source_dir = os.path.join(source, rel_path)
             if not os.path.exists(source_dir):
+                print(f"Removing directory: {replica_dir}")
                 shutil.rmtree(replica_dir)
-print("After copying file source:") 
-print(os.listdir(source))
-print("After copying file destin:") 
-print(os.listdir(destination))
-        # shutil.copytree()
-# # Copy the content of 
-# # source to destination 
-# dest = shutil.copytree(source, destination) 
 
-# # List files and directories 
-# # in "/home / User / Documents" 
-# print("After copying file:") 
-# print(os.listdir(path)) 
+def main():
+    parser = argparse.ArgumentParser(description="Synchronize two folders (source -> replica).")
+    parser.add_argument("--source_folder", required=True, help="Path to the source folder.")
+    parser.add_argument("--replica_folder", required=True, help="Path to the replica folder.")
+    parser.add_argument("--interval", type=int, required=True, help="Synchronization interval in seconds.")
+    args = parser.parse_args()
 
-# # Print the metadata 
-# # of the destination file 
-# # matadata = os.stat(destination) 
-# # print("Metadata:", metadata) 
+    source = args.source_folder
+    destination = args.replica_folder
+    interval = args.interval
 
-# # Print path of newly 
-# # created file 
-# print("Destination path:", dest) 
+    if not os.path.exists(source):
+        print(f"Error: Source folder '{source}' does not exist.")
+        return
+    if not os.path.exists(destination):
+        print(f"Replica folder '{destination}' does not exist. Creating it.")
+        os.makedirs(destination)
 
+    if interval <= 0:
+        print("Error: Interval must be a positive number.")
+        return
 
-# def main():
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--source_folder", help = "pls enter --s and than name of source folder", action="store")
-#     parser.add_argument("--replica_folder", help = "pls enter --r and than name of replica folder", action="store")
-#     parser.add_argument("--interval", help = "pls enter --i and than interval time(in second)", type=int, action="store")
-#     args = parser.parse_args()
-# # source_folder = args.source_folder
-# # replica_folder = args.replica_folder
-# # interval = args.interval
+    print(f"Starting synchronization: {source} -> {destination}")
+    print(f"Synchronization interval: {interval} seconds")
+    
+    try:
+        while True:
+            synchronisation(source, destination)
+            print("Synchronization completed. Waiting for next cycle...")
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("\nSynchronization interrupted by user.")
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
